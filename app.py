@@ -1,46 +1,79 @@
 
+# 以下を「app.py」に書き込み
 import streamlit as st
+from streamlit_chat import message
+
 import openai
+import secret_keys  # 外部ファイルにAPI keyを保存
+import os
 
-# Streamlit Community Cloudの「Secrets」からOpenAI API keyを取得
-openai.api_key = st.secrets.OpenAIAPI.openai_api_key
+os.environ["OPENAI_API_KEY"] = secret_keys.openai_api_key
+# openai.api_key = secret_keys.openai_api_key
 
-# st.session_stateを使いメッセージのやりとりを保存
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [
-        {"role": "system", "content": "あなたは優秀なレビュアーAIです。日本語表現のおかしな個所を指摘します。"}
-        ]
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+)
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationChain
+from langchain.callbacks.manager import CallbackManager
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-# チャットボットとやりとりする関数
-def communicate():
-    messages = st.session_state["messages"]
+# Does it work?
+from langchain.callbacks.streamlit import StreamlitCallbackHandler
 
-    user_message = {"role": "user", "content": st.session_state["user_input"]}
-    messages.append(user_message)
+system_message = "あなたは優秀なレビュアーAIです。日本語表現のおかしな個所を指摘します。"
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo-0613",
-        messages=messages
-    )
+prompt = ChatPromptTemplate.from_messages([
+  SystemMessagePromptTemplate.from_template(system_message),
+  MessagesPlaceholder(variable_name="history"),
+  HumanMessagePromptTemplate.from_template("{input}")
+])
 
-    bot_message = response["choices"][0]["message"]
-    messages.append(bot_message)
+@st.cache_resource
+def load_conversation():
+  llm = ChatOpenAI(
+    model_name="gpt-3.5-turbo-0613",
+    streaming=True,
+    callback_manager=CallbackManager([
+      # StreamlitCallbackHandler(),
+      StreamingStdOutCallbackHandler()
+    ]),
+    verbose=True,
+    temperature=0,
+    max_tokens=1024
+  )
+  memory = ConversationBufferMemory(return_messages=True)
+  conversation = ConversationChain(
+    memory=memory,
+    prompt=prompt,
+    llm=llm
+  )
+  return conversation
 
-    st.session_state["user_input"] = ""  # 入力欄を消去
-
-
-# ユーザーインターフェイスの構築
 st.title("日本語レビューChatBot")
 st.write("レビューしたい文章を入力してください。")
 
-user_input = st.text_input("メッセージを入力してください。", key="user_input", on_change=communicate)
+if "generated" not in st.session_state:
+    st.session_state.generated = []
+if "past" not in st.session_state:
+    st.session_state.past = []
 
-if st.session_state["messages"]:
-    messages = st.session_state["messages"]
+with st.form("日本語レビューChatBotに質問する", clear_on_submit=True):
+  user_message = st.text_area("文章を入力してください")
 
-    for message in reversed(messages[1:]):  # 直近のメッセージを上に
-        speaker = "🙂"
-        if message["role"]=="assistant":
-            speaker="🤖"
+  submitted = st.form_submit_button("質問する")
+  if submitted:
+    conversation = load_conversation()
+    answer = conversation.predict(input=user_message)
 
-        st.write(speaker + ": " + message["content"])
+    st.session_state.past.append(user_message)
+    st.session_state.generated.append(answer)
+
+    if st.session_state["generated"]:
+      for i in range(len(st.session_state.generated) - 1, -1, -1):
+        message(st.session_state.generated[i], key=str(i))
+        message(st.session_state.past[i], is_user=True, key=str(i) + "_user")
