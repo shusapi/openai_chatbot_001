@@ -4,11 +4,12 @@ import streamlit as st
 from streamlit_chat import message
 
 import openai
-import secret_keys  # 外部ファイルにAPI keyを保存
-import os
+# import secret_keys  # 外部ファイルにAPI keyを保存
+# import os
 
-os.environ["OPENAI_API_KEY"] = secret_keys.openai_api_key
+# os.environ["OPENAI_API_KEY"] = secret_keys.openai_api_key
 # openai.api_key = secret_keys.openai_api_key
+openai.api_key = st.secrets.OpenAIAPI.openai_api_key
 
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
