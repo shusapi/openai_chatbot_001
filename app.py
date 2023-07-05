@@ -54,7 +54,6 @@ def load_conversation():
   return conversation
 
 st.title("ChatBot")
-st.write("文章を入力してください。")
 
 if "generated" not in st.session_state:
     st.session_state.generated = []
