@@ -24,7 +24,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 # Does it work?
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 
-system_message = "あなたは優秀なレビュアーAIです。日本語表現のおかしな個所を指摘します。"
+system_message = "あなたは優秀なChatbotです。"
 
 prompt = ChatPromptTemplate.from_messages([
   SystemMessagePromptTemplate.from_template(system_message),
@@ -53,15 +53,15 @@ def load_conversation():
   )
   return conversation
 
-st.title("日本語レビューChatBot")
-st.write("レビューしたい文章を入力してください。")
+st.title("ChatBot")
+st.write("文章を入力してください。")
 
 if "generated" not in st.session_state:
     st.session_state.generated = []
 if "past" not in st.session_state:
     st.session_state.past = []
 
-with st.form("日本語レビューChatBotに質問する", clear_on_submit=True):
+with st.form("ChatBotに質問する", clear_on_submit=True):
   user_message = st.text_area("文章を入力してください")
 
   submitted = st.form_submit_button("質問する")
