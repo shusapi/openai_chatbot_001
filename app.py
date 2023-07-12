@@ -16,7 +16,8 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain.memory import ConversationBufferMemory
+# from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationSummaryBufferMemory
 from langchain.chains import ConversationChain
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -42,10 +43,10 @@ def load_conversation():
       StreamingStdOutCallbackHandler()
     ]),
     verbose=True,
-    temperature=0,
-    max_tokens=1024
+    temperature=0
   )
-  memory = ConversationBufferMemory(return_messages=True)
+  # memory = ConversationBufferMemory(return_messages=True)
+  memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1024, return_messages=True)
   conversation = ConversationChain(
     memory=memory,
     prompt=prompt,
