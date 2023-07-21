@@ -36,7 +36,7 @@ prompt = ChatPromptTemplate.from_messages([
 @st.cache_resource
 def load_conversation():
   llm = ChatOpenAI(
-    model_name="gpt-3.5-turbo-0613",
+    model_name="gpt-3.5-turbo-16k",
     streaming=True,
     callback_manager=CallbackManager([
       # StreamlitCallbackHandler(),
